@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competitiveness Map Interactive</title>
+    <!-- Load Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <!-- Load Data -->
+    <script src="data.js"></script>
+    <!-- Load SheetJS -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        #graph {
+            width: 100%;
+            height: 600px;
+        }
+
+        /* Header Styling */
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-family: 'Times New Roman', serif;
+            position: relative;
+            padding: 0 20px;
+        }
+
+        .header-title-group {
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .header-title {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+            font-size: 32px;
+            color: #333;
+            letter-spacing: 0.5px;
+            line-height: 1.2;
+        }
+
+        .header-subtitle {
+            margin: 5px 0 0 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            font-weight: normal;
+            font-size: 20px;
+            color: #555;
+            line-height: 1.2;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: rgb(16, 21, 48);
+            font-family: 'Arial', sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 8px 16px;
+            border: 1px solid rgb(16, 21, 48);
+            border-radius: 20px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover {
+            background-color: rgb(16, 21, 48);
+            color: white;
+            opacity: 0.9;
+        }
+
+        .controls {
+            margin: 20px 0 5px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        #year-slider {
+            width: 300px;
+            accent-color: rgb(16, 21, 48);
+            cursor: pointer;
+        }
+
+        #year-display {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: rgb(16, 21, 48);
+            min-width: 60px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header-container">
+            <a href="index.html" class="nav-link">&larr; Return to Intro</a>
+            <div class="header-title-group">
+                <h1 class="header-title">Data: Competitiveness Map</h1>
+                <h2 class="header-subtitle">Products and Partners Analysis vs Export Volume</h2>
+            </div>
+            <a href="tracking_rca.html" class="nav-link">Go to RCA Tracking &rarr;</a>
+        </div>
+
+        <div class="controls">
+            <label for="year-slider">Select Year:</label>
+            <input type="range" id="year-slider" min="1995" max="2024" step="1">
+            <span id="year-display"></span>
+            <!-- Download Button -->
+            <button id="download-btn" class="nav-link"
+                style="margin-left: 20px; cursor: pointer; background: white; border-radius: 4px; padding: 5px 15px;">Download
+                Data</button>
+        </div>
+
+        <div id="graph"></div>
+    </div>
+
+    <script>
+        // Ensure data is loaded
+        if (typeof graphData === 'undefined') {
+            document.body.innerHTML = '<h2 style="text-align:center; color:red;">Error: data.js not found or not loaded correctly.</h2>';
+            throw new Error("data.js not loaded");
+        }
+
+        // Get unique years and sort them
+        const years = [...new Set(graphData.map(d => d.year))].sort((a, b) => a - b);
+        const minYear = years[0];
+        const maxYear = years[years.length - 1];
+
+        // seamless axis transitions
+        const allRcaProd = graphData.map(d => d.rca_products);
+        const allRcaPart = graphData.map(d => d.rca_partners);
+
+        const xMin = 0;
+        const xMax = Math.max(...allRcaProd) * 1.05; // 5% padding
+        const yMin = 0;
+        const yMax = Math.max(...allRcaPart) * 1.05;
+
+        // Setup slider
+        const slider = document.getElementById('year-slider');
+        const yearDisplay = document.getElementById('year-display');
+        const downloadBtn = document.getElementById('download-btn');
+
+        slider.min = minYear;
+        slider.max = maxYear;
+        slider.value = maxYear;
+        yearDisplay.textContent = maxYear;
+
+        function downloadExcel() {
+            const year = slider.value;
+            const filteredData = graphData.filter(d => d.year === parseInt(year));
+
+            // Data: Country, rca_products, rca_partners, export_value
+            const data = filteredData.map(d => ({
+                "Country": d.country,
+                "RCA_Products": d.rca_products,
+                "RCA_Partners": d.rca_partners,
+                "Export_Value": d.export_value || 0
+            }));
+
+            // Create Worksheet
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Data");
+            XLSX.writeFile(wb, `Competitiveness_${year}.xlsx`);
+        }
+
+        // Listeners
+        downloadBtn.innerHTML = "Download Excel";
+        // downloadCSV is not defined, so no need to remove it if we just reload page. 
+        // If we are hot-reloading context, it might persist, but for static page load it's fine.
+        downloadBtn.addEventListener('click', downloadExcel);
+
+        function getTrace(year) {
+            const filteredData = graphData.filter(d => d.year === parseInt(year));
+
+            // Calculate bubble size based on export value
+            // Since export values can be huge, we'll use log scale or sqrt for visual sizing
+            // But Plotly handles scaling if we provide sizeref
+            // Let's normalize slightly to avoid massive bubbles
+
+            // Log transformation often works better for economic data with huge variance (e.g., China vs small islands)
+            // Or square root of value to map to area (circle size is radius in marker.size usually?)
+            // Plotly 'size' is diameter. Area is proportional to value usually desired.
+            // Sqrt(Value) -> Diameter.
+
+            return {
+                x: filteredData.map(d => d.rca_products),
+                y: filteredData.map(d => d.rca_partners),
+                text: filteredData.map(d => d.country),
+                ids: filteredData.map(d => d.country),
+
+                // Format export value for hover
+                customdata: filteredData.map(d => d.export_value.toLocaleString('en-US', { style: 'currency', currency: 'USD' })),
+
+                mode: 'markers',
+                type: 'scatter',
+                marker: {
+                    // Size proportional to sqrt of export value
+                    size: filteredData.map(d => Math.sqrt(d.export_value)),
+                    sizemode: 'area', // Makes 'size' set the area, which is correct for mapping value to circle
+                    sizeref: 2000, // Tune this value to adjust overall bubble sizes. 
+                    // Max export is huge (~3.5T). Sqrt(3.5T) = 1.8M. 
+                    // We need to scale this down to pixels.
+                    // Try-and-error tuning or calculated based on max.
+                    // Max value ~3.3e12. Sqrt ~ 1.8e6. 
+                    // If we want max bubble ~ 100px diameter -> area ~ 7800.
+                    // sizeref = max_value / max_size^2 ? No.
+                    // Plotly: marker.size = Math.sqrt(value / sizeref) if sizemode='area'
+                    // We passed Sqrt(Value) above? No, let's pass Value directly and use sizemode='area'.
+
+                    // Actually, passing raw value is safer if sizemode is area.
+                    // Let's reset size mapping:
+                },
+
+                // Override marker config for correct scaling
+                // We'll construct the array of sizes here
+                // Let's just pass the raw value to 'size' property BUT we need to scale it ourselves 
+                // or trust Plotly's sizeref. 
+                // Let's manually map to a reasonable range for control.
+                // Max size = 60px.
+                // size = (val / maxVal) * 60 + minSize
+            };
+        }
+
+        // Helper to get trace with manual sizing
+        function getTraceBalanced(year) {
+            const filteredData = graphData.filter(d => d.year === parseInt(year));
+
+            // Find max export value across ALL years to keep scale consistent
+            const maxExportGlobal = Math.max(...graphData.map(d => d.export_value || 0));
+
+            // Sizing function: Scale area relative to max.
+            // visualSize = maxVisualSize * sqrt(value / maxExportGlobal)
+            const maxVisualSize = 80; // pixels diameter
+
+            const sizes = filteredData.map(d => {
+                const val = d.export_value || 0;
+                return maxVisualSize * Math.sqrt(val / maxExportGlobal);
+            });
+
+            return {
+                x: filteredData.map(d => d.rca_products),
+                y: filteredData.map(d => d.rca_partners),
+                text: filteredData.map(d => d.country),
+                ids: filteredData.map(d => d.country),
+                customdata: filteredData.map(d => (d.export_value || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })),
+                mode: 'markers', // Text on circles usually too cluttered
+                type: 'scatter',
+                marker: {
+                    size: sizes,
+                    color: 'rgba(16, 21, 48, 0.7)',
+                    line: {
+                        color: 'white',
+                        width: 1
+                    }
+                },
+                hovertemplate: '<b>Country:</b> %{text}<br>' +
+                    '<b>Competitive Products:</b> %{x}<br>' +
+                    '<b>Competitive Partners:</b> %{y}<br>' +
+                    '<b>Export Volume:</b> %{customdata}<br>' +
+                    '<extra></extra>',
+            };
+        }
+
+        const layout = {
+            xaxis: {
+                title: {
+                    text: '<b>Number of Products Exported Competitively<br>(RCA > 1)</b>',
+                    font: { family: 'Arial, sans-serif', size: 16, color: '#333' }
+                },
+                zeroline: true,
+                gridcolor: '#e6e6e6',
+                range: [xMin, xMax]
+            },
+            yaxis: {
+                title: {
+                    text: '<b>Number of Partners Reached Competitively<br>(RCA > 1)</b>',
+                    font: { family: 'Arial, sans-serif', size: 16, color: '#333' }
+                },
+                zeroline: true,
+                gridcolor: '#e6e6e6',
+                range: [yMin, yMax]
+            },
+            hovermode: 'closest',
+            plot_bgcolor: '#ffffff',
+            paper_bgcolor: '#ffffff',
+            margin: { b: 150, l: 150, t: 0 },
+            annotations: [
+                {
+                    x: 0,
+                    y: -0.22,
+                    xref: 'paper',
+                    yref: 'paper',
+                    text: 'Source: BACI Trade Data (CEPII), TEPAV calculations.<br>Bubble size is proportional to total export volume.',
+                    showarrow: false,
+                    font: {
+                        size: 9,
+                        color: '#555'
+                    },
+                    xanchor: 'left',
+                    yanchor: 'top',
+                    align: 'left'
+                }
+            ]
+        };
+
+        const config = { responsive: true };
+
+        // Initial Plot
+        const initialTrace = getTraceBalanced(maxYear);
+        Plotly.newPlot('graph', [initialTrace], layout, config);
+
+        // Slider Event
+        slider.addEventListener('input', function () {
+            const year = this.value;
+            yearDisplay.textContent = year;
+
+            const newTrace = getTraceBalanced(year);
+
+            Plotly.animate('graph', {
+                data: [{
+                    x: newTrace.x,
+                    y: newTrace.y,
+                    text: newTrace.text,
+                    ids: newTrace.ids,
+                    customdata: newTrace.customdata,
+                    marker: newTrace.marker // Need to update marker sizes
+                }],
+                layout: {}
+            }, {
+                transition: {
+                    duration: 100,
+                    easing: 'cubic-in-out'
+                },
+                frame: {
+                    duration: 100,
+                    redraw: false
+                }
+            });
+        });
+
+    </script>
+
+</body>
+
+</html>

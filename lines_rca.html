@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competitiveness Trends</title>
+    <!-- Load Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <!-- Load Data -->
+    <script src="data.js"></script>
+    <!-- Load Choices.js for Multi-select -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <!-- Load SheetJS -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Header Styling */
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-family: 'Times New Roman', serif;
+            position: relative;
+            padding: 0 20px;
+        }
+
+        .header-title-group {
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .header-title {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+            font-size: 32px;
+            color: #333;
+            letter-spacing: 0.5px;
+            line-height: 1.2;
+        }
+
+        .header-subtitle {
+            margin: 5px 0 0 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            font-weight: normal;
+            font-size: 20px;
+            color: #555;
+            line-height: 1.2;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: rgb(16, 21, 48);
+            font-family: 'Arial', sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 8px 16px;
+            border: 1px solid rgb(16, 21, 48);
+            border-radius: 20px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover {
+            background-color: rgb(16, 21, 48);
+            color: white;
+        }
+
+        #graph {
+            width: 100%;
+            height: 520px;
+        }
+
+        .controls {
+            margin: 20px 0 5px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* Country Selector Styling */
+        .choices {
+            min-width: 300px;
+            margin-bottom: 0;
+        }
+
+        /* Metric Radio Styling */
+        .radio-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        input[type="radio"] {
+            accent-color: rgb(16, 21, 48);
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header-container">
+            <a href="index.html" class="nav-link">&larr; Return to Intro</a>
+            <div class="header-title-group">
+                <h1 class="header-title">Competitiveness Trends</h1>
+                <h2 class="header-subtitle">Analysis of Product and Market Expansion (1995-2023)</h2>
+            </div>
+            <a href="scatter_rca.html" class="nav-link">Go to RCA Scatter &rarr;</a>
+        </div>
+
+        <div class="controls">
+            <!-- Metric Selector -->
+            <div class="control-group">
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="metric" value="rca_products" checked> Competitive Products (RCA > 1)
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="metric" value="rca_partners"> Competitive Partners (RCA > 1)
+                    </label>
+                </div>
+            </div>
+
+            <!-- Country Selector -->
+            <div class="control-group">
+                <label for="country-select">Countries:</label>
+                <select id="country-select" multiple>
+                    <!-- Options populated by JS -->
+                </select>
+            </div>
+
+            <!-- Download Button -->
+            <div class="control-group">
+                <button id="download-btn" class="nav-link" style="cursor: pointer; background: white;">Download
+                    Data</button>
+            </div>
+        </div>
+
+        <div id="graph"></div>
+    </div>
+
+    <script>
+        // Ensure data is loaded
+        if (typeof graphData === 'undefined') {
+            document.body.innerHTML = '<h2 style="text-align:center; color:red;">Error: data.js not found.</h2>';
+            throw new Error("data.js not loaded");
+        }
+
+        // Get unique sorted years and countries
+        const years = [...new Set(graphData.map(d => d.year))].sort((a, b) => a - b);
+        const countries = [...new Set(graphData.map(d => d.country))].sort();
+
+        // DOM Elements
+        const metricRadios = document.getElementsByName('metric');
+        const countrySelect = document.getElementById('country-select');
+        const downloadBtn = document.getElementById('download-btn');
+
+        // Initialize Choices.js
+        const defaultCountries = ['TUR', 'USA', 'CHN', 'DEU', 'KOR'];
+
+        countries.forEach(p => {
+            const option = document.createElement('option');
+            option.value = p;
+            option.textContent = p;
+            countrySelect.appendChild(option);
+        });
+
+        const choices = new Choices(countrySelect, {
+            removeItemButton: true,
+            searchEnabled: true,
+            placeholderValue: 'Select countries...',
+            itemSelectText: '',
+        });
+
+        // Explicitly set defaults
+        const validDefaults = defaultCountries.filter(c => countries.includes(c));
+        choices.setChoiceByValue(validDefaults.length > 0 ? validDefaults : [countries[0]]);
+
+        function getSelectedCountries() {
+            return choices.getValue(true);
+        }
+
+        function getSelectedMetric() {
+            for (const r of metricRadios) {
+                if (r.checked) return r.value;
+            }
+            return 'rca_products';
+        }
+
+        function downloadExcel() {
+            const selectedCountries = getSelectedCountries();
+            const metric = getSelectedMetric();
+
+            // Prepare wide format data
+            const header = ["Country", ...years];
+            const data = [header];
+
+            selectedCountries.forEach(country => {
+                let row = [country];
+                const countryData = graphData.filter(d => d.country === country);
+
+                // create map for quick lookup
+                const dataMap = {};
+                countryData.forEach(d => dataMap[d.year] = d[metric]);
+
+                // fill row for all years
+                years.forEach(year => {
+                    const val = dataMap[year];
+                    row.push(val !== undefined && val !== null ? val : "");
+                });
+                data.push(row);
+            });
+
+            // Creates Worksheet
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Data");
+            XLSX.writeFile(wb, `${metric}_data.xlsx`);
+        }
+
+        // Event Listeners
+        countrySelect.addEventListener('change', updateGraph);
+        if (downloadBtn) {
+            downloadBtn.innerHTML = "Download Excel";
+            downloadBtn.addEventListener('click', downloadExcel);
+        }
+
+        for (const r of metricRadios) {
+            r.addEventListener('change', updateGraph);
+        }
+
+        function updateGraph() {
+            const selectedCountries = getSelectedCountries();
+            const metric = getSelectedMetric();
+
+            // Labels and Keys
+            const isProducts = metric === 'rca_products';
+            const baseLabel = isProducts ? 'Exported Products<br>(RCA > 1)' : 'Export Partners<br>(RCA > 1)';
+            const yAxisTitle = `<b>${baseLabel}</b>`;
+
+            const traces = selectedCountries.map(country => {
+                const countryData = graphData.filter(d => d.country === country).sort((a, b) => a.year - b.year);
+
+                return {
+                    x: countryData.map(d => d.year),
+                    y: countryData.map(d => d[metric]),
+                    name: country,
+                    mode: 'lines+markers',
+                    type: 'scatter',
+                    line: { width: 3 },
+                    marker: { size: 6 },
+                    hovertemplate:
+                        `<b>${country}</b><br>` +
+                        `${baseLabel}: %{y}<br>` +
+                        '<extra></extra>'
+                };
+            });
+
+            // Calculate dynamic range with padding
+            let allY = [];
+            traces.forEach(t => allY.push(...t.y));
+
+            // Adjust range
+            let yRange;
+            if (allY.length > 0) {
+                const validY = allY.filter(v => v !== null && v !== undefined && !isNaN(v));
+                if (validY.length > 0) {
+                    // Start from 0 ideally for counts, but could zoom in
+                    const yMin = 0; // Using 0 baseline is usually better for counts
+                    const yMax = Math.max(...validY) * 1.1; // 10% padding top
+                    yRange = [yMin, yMax];
+                }
+            }
+
+            const layout = {
+                xaxis: {
+                    title: {
+                        text: '',
+                        font: { family: 'Arial, sans-serif', size: 18, color: '#333' }
+                    },
+                    zeroline: true,
+                    gridcolor: '#e6e6e6',
+                    range: [years[0] - 0.5, years[years.length - 1] + 0.5],
+                    spikemode: 'across',
+                    showspikes: true,
+                    spikethickness: 1,
+                    spikedash: 'solid',
+                    spikecolor: '#999'
+                },
+                yaxis: {
+                    title: {
+                        text: yAxisTitle,
+                        font: { family: 'Arial, sans-serif', size: 18, color: '#333' }
+                    },
+                    zeroline: true,
+                    gridcolor: '#e6e6e6',
+                    range: yRange,
+                },
+                hovermode: 'x',
+                plot_bgcolor: '#ffffff',
+                paper_bgcolor: '#ffffff',
+                legend: {
+                    x: 1.02,
+                    y: 1,
+                    traceorder: 'normal',
+                    font: { family: 'Arial, sans-serif', size: 12, color: '#000' }
+                },
+                margin: { b: 150, l: 150, t: 20, r: 150 },
+                annotations: [
+                    {
+                        x: 0,
+                        y: -0.22,
+                        xref: 'paper',
+                        yref: 'paper',
+                        text: 'Source: BACI Trade Data (CEPII), TEPAV calculations.',
+                        showarrow: false,
+                        font: {
+                            size: 9,
+                            color: '#555'
+                        },
+                        xanchor: 'left',
+                        yanchor: 'top',
+                        align: 'left'
+                    }
+                ]
+            };
+
+            const config = { responsive: true };
+            Plotly.newPlot('graph', traces, layout, config);
+        }
+
+        // Initial Render
+        updateGraph();
+
+    </script>
+
+</body>
+
+</html>

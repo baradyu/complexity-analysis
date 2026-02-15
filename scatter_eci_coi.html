@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECI vs COI Interactive World Graph</title>
+    <!-- Load Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <!-- Load Data -->
+    <script src="data.js"></script>
+    <!-- Load SheetJS -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        #graph {
+            width: 100%;
+            height: 600px;
+        }
+
+        /* Header Styling */
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-family: 'Times New Roman', serif;
+            position: relative;
+            padding: 0 20px;
+        }
+
+        .header-title-group {
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .header-title {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+            font-size: 32px;
+            color: #333;
+            letter-spacing: 0.5px;
+            line-height: 1.2;
+        }
+
+        .header-subtitle {
+            margin: 5px 0 0 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            font-weight: normal;
+            font-size: 20px;
+            color: #555;
+            line-height: 1.2;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: rgb(16, 21, 48);
+            font-family: 'Arial', sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 8px 16px;
+            border: 1px solid rgb(16, 21, 48);
+            border-radius: 20px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover {
+            background-color: rgb(16, 21, 48);
+            color: white;
+            opacity: 0.9;
+        }
+
+        .controls {
+            margin: 20px 0 5px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        #year-slider {
+            width: 300px;
+            accent-color: rgb(16, 21, 48);
+            cursor: pointer;
+        }
+
+        #year-display {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: rgb(16, 21, 48);
+            min-width: 60px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header-container">
+            <a href="index.html" class="nav-link">&larr; Return to Intro</a>
+            <div class="header-title-group">
+                <h1 class="header-title">Mapping World Economic Complexity</h1>
+                <h2 class="header-subtitle">Current productive know-how and implied capability accumulation potential
+                </h2>
+            </div>
+            <a href="tracking_eci_coi.html" class="nav-link">Go to Tracking Tool &rarr;</a>
+        </div>
+
+        <div class="controls">
+            <label for="year-slider">Select Year:</label>
+            <input type="range" id="year-slider" min="1995" max="2024" step="1">
+            <span id="year-display"></span>
+            <!-- Download Button -->
+            <button id="download-btn" class="nav-link"
+                style="margin-left: 20px; cursor: pointer; background: white; border-radius: 4px; padding: 5px 15px;">Download
+                Data</button>
+        </div>
+
+        <div id="graph"></div>
+    </div>
+
+    <script>
+        // Ensure data is loaded
+        if (typeof graphData === 'undefined') {
+            document.body.innerHTML = '<h2 style="text-align:center; color:red;">Error: data.js not found or not loaded correctly.</h2>';
+            throw new Error("data.js not loaded");
+        }
+
+        // Get unique years and sort them
+        const years = [...new Set(graphData.map(d => d.year))].sort((a, b) => a - b);
+        const minYear = years[0];
+        const maxYear = years[years.length - 1];
+
+        // seamless axis transitions
+        const allEci = graphData.map(d => d.eci);
+        const allCoi = graphData.map(d => d.coi);
+        const xMin = Math.min(...allEci) - 0.2;
+        const xMax = Math.max(...allEci) + 0.2;
+        const yMin = Math.min(...allCoi) - 0.2;
+        const yMax = Math.max(...allCoi) + 0.2;
+
+        // Setup slider
+        const slider = document.getElementById('year-slider');
+        const yearDisplay = document.getElementById('year-display');
+        const downloadBtn = document.getElementById('download-btn');
+
+        slider.min = minYear;
+        slider.max = maxYear;
+        slider.value = maxYear; // Start at latest year
+        yearDisplay.textContent = maxYear;
+
+        function downloadExcel() {
+            const year = slider.value;
+            const filteredData = graphData.filter(d => d.year === parseInt(year));
+
+            // Prepare Data: Country, ECI, COI
+            const data = filteredData.map(d => ({
+                "Country": d.country,
+                "ECI": d.eci,
+                "COI": d.coi
+            }));
+
+            // Create Worksheet
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Data");
+            XLSX.writeFile(wb, `ECI_COI_${year}.xlsx`);
+        }
+
+        // Listeners
+        downloadBtn.innerHTML = "Download Excel";
+        downloadBtn.addEventListener('click', downloadExcel);
+
+        function getTrace(year) {
+            const filteredData = graphData.filter(d => d.year === parseInt(year));
+
+            // 1. Assign Ranks
+            const eciSorted = [...filteredData].sort((a, b) => b.eci - a.eci);
+            eciSorted.forEach((d, i) => d.eciRank = i + 1);
+
+            const coiSorted = [...filteredData].sort((a, b) => b.coi - a.coi);
+            coiSorted.forEach((d, i) => d.coiRank = i + 1);
+
+            // 2. Smart De-cluttering (Hide overlaps only)
+            const priorityList = [...filteredData].sort((a, b) => b.eci - a.eci);
+
+            const occupiedPositions = [];
+            const hiddencountries = new Set();
+
+            // Collision radius (approximate text dimensions in data units)
+            // Adjust based on the density of world data points
+            const collisionRadiusX = (xMax - xMin) / 30;
+            const collisionRadiusY = (yMax - yMin) / 30;
+
+            priorityList.forEach(d => {
+                let overlaps = false;
+                for (const p of occupiedPositions) {
+                    if (Math.abs(d.eci - p.eci) < collisionRadiusX && Math.abs(d.coi - p.coi) < collisionRadiusY) {
+                        overlaps = true;
+                        break;
+                    }
+                }
+
+                if (overlaps) {
+                    hiddencountries.add(d.country);
+                } else {
+                    occupiedPositions.push(d);
+                }
+            });
+
+            return {
+                x: filteredData.map(d => d.eci),
+                y: filteredData.map(d => d.coi),
+                text: filteredData.map(d => hiddencountries.has(d.country) ? '' : d.country),
+                ids: filteredData.map(d => d.country),
+                customdata: filteredData.map(d => [d.eciRank, d.coiRank, d.country]),
+                mode: 'markers+text',
+                type: 'scatter',
+                marker: {
+                    size: 12,
+                    color: 'rgb(16, 21, 48)',
+                    opacity: 0.8,
+                    line: {
+                        color: 'white',
+                        width: 1
+                    }
+                },
+                textposition: 'top center',
+                textfont: {
+                    family: 'Arial',
+                    size: 11,
+                    color: '#333'
+                },
+                hovertemplate: '<b>Country:</b> %{customdata[2]}<br>' +
+                    '<b>ECI Rank:</b> %{customdata[0]}<br>' +
+                    '<b>COI Rank:</b> %{customdata[1]}<br>' +
+                    '<b>ECI:</b> %{x:.2f}<br>' +
+                    '<b>COI:</b> %{y:.2f}<br>' +
+                    '<extra></extra>',
+            };
+        }
+
+        const layout = {
+            xaxis: {
+                title: {
+                    text: '<b>Economic Complexity Index<br>(ECI)</b>',
+                    font: {
+                        family: 'Arial, sans-serif',
+                        size: 16,
+                        color: '#333'
+                    }
+                },
+                zeroline: true,
+                gridcolor: '#e6e6e6',
+                range: [xMin, xMax]
+            },
+            yaxis: {
+                title: {
+                    text: '<b>Complexity Outlook Index<br>(COI)</b>',
+                    font: {
+                        family: 'Arial, sans-serif',
+                        size: 16,
+                        color: '#333'
+                    }
+                },
+                zeroline: true,
+                gridcolor: '#e6e6e6',
+                range: [yMin, yMax]
+            },
+            hovermode: 'closest',
+            plot_bgcolor: '#ffffff',
+            paper_bgcolor: '#ffffff',
+            margin: { b: 150, l: 150, t: 0 },
+            annotations: [
+                {
+                    x: 0,
+                    y: -0.22,
+                    xref: 'paper',
+                    yref: 'paper',
+                    text: 'Source: BACI Trade Data (CEPII), Hidalgo & Hausmann (2009); Atlas of Economic Complexity (Hausmann et al., 2011)., TEPAV calculations.',
+                    showarrow: false,
+                    font: {
+                        size: 9,
+                        color: '#555'
+                    },
+                    xanchor: 'left',
+                    yanchor: 'top',
+                    align: 'left'
+                }
+            ]
+        };
+
+        const config = { responsive: true };
+
+        // Initial Plot
+        const initialTrace = getTrace(maxYear);
+        Plotly.newPlot('graph', [initialTrace], layout, config);
+
+        // Slider Event
+        slider.addEventListener('input', function () {
+            const year = this.value;
+            yearDisplay.textContent = year;
+
+            const newTrace = getTrace(year);
+
+            // Efficiently animate/update
+            Plotly.animate('graph', {
+                data: [{
+                    x: newTrace.x,
+                    y: newTrace.y,
+                    text: newTrace.text,
+                    ids: newTrace.ids,
+                    customdata: newTrace.customdata
+                }],
+                layout: {}
+            }, {
+                transition: {
+                    duration: 100,
+                    easing: 'cubic-in-out'
+                },
+                frame: {
+                    duration: 100,
+                    redraw: false
+                }
+            });
+        });
+
+    </script>
+
+</body>
+
+</html>

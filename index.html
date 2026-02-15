@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Economic Complexity</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 50px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Header Styling */
+        h1 {
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+            font-size: 36px;
+            color: rgb(16, 21, 48);
+            margin: 0 0 10px 0;
+            text-align: center;
+            letter-spacing: -0.5px;
+        }
+
+        h2 {
+            font-family: 'Arial', sans-serif;
+            font-weight: normal;
+            font-size: 22px;
+            color: #666;
+            margin: 0 0 50px 0;
+            text-align: center;
+        }
+
+        /* Content Sections */
+        .content-section {
+            margin-bottom: 50px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: rgb(16, 21, 48);
+            margin-bottom: 20px;
+            border-bottom: 3px solid rgb(16, 21, 48);
+            padding-bottom: 8px;
+            display: inline-block;
+        }
+
+        .text-content {
+            font-size: 16px;
+            color: #444;
+            text-align: justify;
+        }
+
+        /* Methodology Grid */
+        .methodology-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        @media (min-width: 768px) {
+            .methodology-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .methodology-item {
+            background-color: #f9f9f9;
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 4px solid rgb(16, 21, 48);
+        }
+
+        .methodology-item h3 {
+            color: rgb(16, 21, 48);
+            font-size: 20px;
+            margin-top: 0;
+            margin-bottom: 12px;
+        }
+
+        .methodology-item p {
+            margin: 0;
+            font-size: 15px;
+            color: #555;
+        }
+
+        /* Navigation Grid */
+        .nav-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        @media (min-width: 768px) {
+            .nav-grid {
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            }
+        }
+
+        .nav-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 40px 30px;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(16, 21, 48, 0.15);
+            border-color: rgb(16, 21, 48);
+        }
+
+        .nav-card h3 {
+            color: rgb(16, 21, 48);
+            font-size: 24px;
+            margin: 0 0 15px 0;
+        }
+
+        .nav-card p {
+            color: #666;
+            font-size: 15px;
+            margin: 0 0 25px 0;
+            flex-grow: 1;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 28px;
+            background-color: rgb(16, 21, 48);
+            color: white;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: background-color 0.2s;
+        }
+
+        .nav-card:hover .btn {
+            background-color: #2a346e;
+        }
+
+        /* Citation */
+        .citation {
+            margin-top: 70px;
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+            border-top: 1px solid #eee;
+            padding-top: 25px;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Mapping World Economic Complexity</h1>
+        <h2>Current productive know-how and implied capability accumulation potential</h2>
+
+        <div class="content-section">
+            <div class="section-title">About this Project</div>
+            <p class="text-content">
+                This interactive platform visualizes the economic complexity landscape of World Countries.
+                Utilizing BACI trade data, it aims to provide policymakers, researchers, and the public
+                with deep insights into the
+                productive capabilities and future structural transformation potential of each country. The tools below
+                allow for both
+                cross-sectional comparison and longitudinal trend analysis, shedding light on how national economies
+                are evolving.
+            </p>
+        </div>
+
+        <div class="content-section">
+            <div class="section-title">Methodology</div>
+            <div class="methodology-grid">
+                <div class="methodology-item">
+                    <h3>Economic Complexity Index (ECI)</h3>
+                    <p>
+                        A measure of the knowledge intensity of an economy. ECI captures the amount of sophisticated
+                        know-how embedded
+                        in the productive structure of a country. A higher ECI suggests a more diversified and complex
+                        set of capabilities,
+                        often correlated with higher income levels and faster future growth.
+                    </p>
+                </div>
+                <div class="methodology-item">
+                    <h3>Complexity Outlook Index (COI)</h3>
+                    <p>
+                        A measure of the "strategic value" of a country's current capabilities. COI quantifies how easy
+                        it
+                        would be for a country to diversify into new, complex products based on what it already
+                        produces.
+                        A higher COI implies many nearby opportunities in the Product Space.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Group 1: Economic Complexity -->
+        <div class="content-section">
+            <div class="section-title">Economic Complexity Analysis</div>
+            <p class="text-content" style="margin-bottom: 20px;">
+                Analyze the sophistication of productive structures using the Economic Complexity Index (ECI) and
+                Complexity Outlook Index (COI).
+            </p>
+            <div class="nav-grid">
+                <!-- 1. Lines ECI, COI -->
+                <a href="lines_eci_coi.html" class="nav-card">
+                    <h3>Country Complexity Trends</h3>
+                    <p>Track the evolution of complexity metrics (1995-2023) for specific countries.</p>
+                    <div class="btn">Launch Tool</div>
+                </a>
+
+                <!-- 2. Scatter ECI, COI -->
+                <a href="scatter_eci_coi.html" class="nav-card">
+                    <h3>Mapping Economic Complexity</h3>
+                    <p>Explore the relationship between know-how (ECI) and future potential (COI) for all countries in
+                        any given year.</p>
+                    <div class="btn">Launch Tool</div>
+                </a>
+
+                <!-- 3. Tracking ECI, COI -->
+                <a href="tracking_eci_coi.html" class="nav-card">
+                    <h3>Tracking Economic Complexity</h3>
+                    <p>Visualize the development trajectory of specific countries over time on the ECI-COI plane.</p>
+                    <div class="btn">Launch Tool</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Group 2: Competitiveness (RCA) -->
+        <div class="content-section">
+            <div class="section-title">Competitiveness Analysis (RCA)</div>
+            <p class="text-content" style="margin-bottom: 20px;">
+                Evaluate global competitiveness by analyzing the number of products exported competitively and the
+                diversity of export markets.
+            </p>
+            <div class="nav-grid">
+                <!-- 4. RCA Line Graphs -->
+                <a href="lines_rca.html" class="nav-card">
+                    <h3>Competitiveness Trends</h3>
+                    <p>Track the number of competitive products and markets (RCA > 1) over time.</p>
+                    <div class="btn">Launch Tool</div>
+                </a>
+
+                <!-- 5. RCA Scatter -->
+                <a href="scatter_rca.html" class="nav-card">
+                    <h3>Mapping Competitiveness</h3>
+                    <p>Explore the relationship between Product Diversification and Market Diversification.</p>
+                    <div class="btn">Launch Tool</div>
+                </a>
+
+                <!-- 6. RCA Tracking -->
+                <a href="tracking_rca.html" class="nav-card">
+                    <h3>Tracking Competitiveness</h3>
+                    <p>Visualize the trajectory of competitive expansion in products vs. markets.</p>
+                    <div class="btn">Launch Tool</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="citation">
+            Source: BACI Trade Data (CEPII), Hidalgo & Hausmann (2009); Atlas of Economic Complexity (Hausmann et al.,
+            2011)., TEPAV calculations.
+        </div>
+    </div>
+</body>
+
+</html>
